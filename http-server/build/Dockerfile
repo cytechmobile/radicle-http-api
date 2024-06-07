@@ -4,6 +4,11 @@ LABEL maintainer="Radicle Team <team@radicle.xyz>"
 WORKDIR /src
 COPY . .
 
+ARG TZ
+ARG LC_ALL
+ENV TZ=$TZ
+ENV LC_ALL=$LC_ALL
+
 # Copy cargo configuration we're going to use to specify compiler options.
 RUN mkdir -p .cargo && cp build/config.toml .cargo/config.toml
 # Install dependencies.
@@ -50,6 +55,8 @@ RUN cargo zigbuild --locked --release \
 # Now copy the files to a new image without all the intermediary artifacts to
 # save some space.
 FROM alpine:3.19 as packager
+ARG RADICLE_VERSION
+ARG GIT_COMMIT_TIME
 COPY --from=builder \
     /src/target/x86_64-unknown-linux-musl/release/rad \
     /src/target/x86_64-unknown-linux-musl/release/radicle-httpd \
