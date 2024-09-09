@@ -858,11 +858,6 @@ async fn patch_update_handler(
             verdict,
             labels,
         } => *patch.review(revision, verdict, summary, labels, &signer)?,
-        patch::Action::ReviewEdit {
-            review,
-            summary,
-            verdict,
-        } => patch.edit_review(review, summary, verdict, &signer)?,
         patch::Action::ReviewRedact { review } => patch.redact_review(review, &signer)?,
         patch::Action::ReviewComment {
             review,
