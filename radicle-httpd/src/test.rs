@@ -16,7 +16,7 @@ use radicle::crypto::ssh::keystore::MemorySigner;
 use radicle::crypto::ssh::Keystore;
 use radicle::crypto::{KeyPair, Seed, Signer};
 use radicle::git::{raw as git2, RefString};
-use radicle::identity::Visibility;
+use radicle::identity::{project, Visibility};
 use radicle::profile::{env, Home};
 use radicle::storage::ReadStorage;
 use radicle::Storage;
@@ -123,7 +123,7 @@ fn seed_with_signer<G: Signer>(dir: &Path, profile: radicle::Profile, signer: &G
 
     // rad init
     let repo = git2::Repository::open(&workdir).unwrap();
-    let name = "hello-world-private".to_string();
+    let name = project::ProjectName::from_str("hello-world-private").unwrap();
     let description = "Private Rad repository for tests".to_string();
     let branch = RefString::try_from(DEFAULT_BRANCH).unwrap();
     let visibility = Visibility::Private {
@@ -131,7 +131,7 @@ fn seed_with_signer<G: Signer>(dir: &Path, profile: radicle::Profile, signer: &G
     };
     let (rid, _, _) = radicle::rad::init(
         &repo,
-        &name,
+        name,
         &description,
         branch,
         visibility,
@@ -140,7 +140,9 @@ fn seed_with_signer<G: Signer>(dir: &Path, profile: radicle::Profile, signer: &G
     )
     .unwrap();
 
-    policies.seed(&rid, node::policy::Scope::All).unwrap();
+    policies
+        .set_seed_policy(&rid, node::policy::Policy::Block)
+        .unwrap();
 
     let workdir = dir.join("hello-world");
 
@@ -217,13 +219,13 @@ fn seed_with_signer<G: Signer>(dir: &Path, profile: radicle::Profile, signer: &G
 
     // rad init
     let repo = git2::Repository::open(&workdir).unwrap();
-    let name = "hello-world".to_string();
+    let name = project::ProjectName::from_str("hello-world").unwrap();
     let description = "Rad repository for tests".to_string();
     let branch = RefString::try_from(DEFAULT_BRANCH).unwrap();
     let visibility = Visibility::default();
     let (rid, _, _) = radicle::rad::init(
         &repo,
-        &name,
+        name,
         &description,
         branch,
         visibility,
@@ -292,13 +294,13 @@ fn seed_with_signer<G: Signer>(dir: &Path, profile: radicle::Profile, signer: &G
 
     // rad init
     let repo = git2::Repository::open(&workdir).unwrap();
-    let name = "again-hello-world".to_string();
+    let name = project::ProjectName::from_str("again-hello-world").unwrap();
     let description = "Rad repository for sorting".to_string();
     let branch = RefString::try_from(DEFAULT_BRANCH).unwrap();
     let visibility = Visibility::default();
     let (rid, _, _) = radicle::rad::init(
         &repo,
-        &name,
+        name,
         &description,
         branch,
         visibility,
@@ -312,27 +314,41 @@ fn seed_with_signer<G: Signer>(dir: &Path, profile: radicle::Profile, signer: &G
         aliases: std::collections::HashMap::new(),
         listen: std::net::SocketAddr::from(([0, 0, 0, 0], 8080)),
         cache: Some(crate::DEFAULT_CACHE_SIZE),
+        session_expiry: auth::DEFAULT_AUTHORIZED_SESSIONS_EXPIRATION,
     };
 
     Context::new(Arc::new(profile), &options)
 }
 
-/// Adds an authorized session to the Context::sessions HashMap.
+/// Adds an authorized session to the session store.
 pub async fn create_session(ctx: Context) {
     let issued_at = OffsetDateTime::now_utc();
-    let mut sessions = ctx.sessions().write().await;
-    sessions.insert(
-        String::from(SESSION_ID),
-        auth::Session {
-            status: auth::AuthState::Authorized,
-            public_key: ctx.profile().public_key,
-            alias: ctx.profile().config.node.alias.clone(),
-            issued_at,
-            expires_at: issued_at
-                .checked_add(auth::AUTHORIZED_SESSIONS_EXPIRATION)
-                .unwrap(),
-        },
-    );
+    let mut sessions = ctx.open_session_db().unwrap();
+    let encrypted_session_id = ctx
+        .profile()
+        .signer()
+        .unwrap()
+        .try_sign(SESSION_ID.as_bytes())
+        .unwrap()
+        .to_string();
+    sessions.remove(&encrypted_session_id).unwrap();
+    let expires_at = if ctx.session_expiry.is_negative() || ctx.session_expiry.is_zero() {
+        OffsetDateTime::from_unix_timestamp(0).unwrap()
+    } else {
+        issued_at.checked_add(ctx.session_expiry).unwrap()
+    };
+    sessions
+        .insert(
+            &encrypted_session_id,
+            &auth::Session {
+                status: auth::AuthState::Authorized,
+                public_key: ctx.profile().public_key,
+                alias: ctx.profile().config.node.alias.clone(),
+                issued_at,
+                expires_at,
+            },
+        )
+        .expect("error creating session");
 }
 
 pub async fn get(app: &Router, path: impl ToString) -> Response {
