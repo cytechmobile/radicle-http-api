@@ -1708,7 +1708,7 @@ dependencies = [
 
 [[package]]
 name = "radicle-httpd"
-version = "0.11.1"
+version = "0.11.2"
 dependencies = [
  "anyhow",
  "axum",
@@ -1729,6 +1729,7 @@ dependencies = [
  "radicle-term",
  "serde",
  "serde_json",
+ "sqlite",
  "tempfile",
  "thiserror",
  "time",

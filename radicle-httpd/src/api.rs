@@ -1,6 +1,6 @@
 pub mod auth;
 
-use std::collections::HashMap;
+use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -14,7 +14,6 @@ use radicle::patch::cache::Patches as _;
 use radicle::storage::git::Repository;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::sync::RwLock;
 use tower_http::cors::{self, CorsLayer};
 
 use radicle::cob::{issue, patch, Author};
@@ -32,28 +31,28 @@ mod v1;
 
 use crate::api::error::Error;
 use crate::cache::Cache;
+use crate::session::store::{DbSession, SessionStoreError};
 use crate::Options;
 
 pub const RADICLE_VERSION: &str = env!("RADICLE_VERSION");
 // This version has to be updated on every breaking change to the radicle-httpd API.
 pub const API_VERSION: &str = "1.0.0";
 
-/// Identifier for sessions
-type SessionId = String;
+pub const HTTPD_DIR: &str = "httpd";
 
 #[derive(Clone)]
 pub struct Context {
     profile: Arc<Profile>,
-    sessions: Arc<RwLock<HashMap<SessionId, auth::Session>>>,
     cache: Option<Cache>,
+    pub session_expiry: time::Duration,
 }
 
 impl Context {
     pub fn new(profile: Arc<Profile>, options: &Options) -> Self {
         Self {
             profile,
-            sessions: Default::default(),
             cache: options.cache.map(Cache::new),
+            session_expiry: options.session_expiry,
         }
     }
 
@@ -102,14 +101,25 @@ impl Context {
         Ok((repo, doc))
     }
 
-    #[cfg(test)]
-    pub fn profile(&self) -> &Arc<Profile> {
-        &self.profile
+    pub fn open_session_db(&self) -> Result<DbSession, error::Error> {
+        Ok(DbSession::open(self.get_session_db_path()?)?)
+    }
+
+    pub fn read_session_db(&self) -> Result<DbSession, error::Error> {
+        Ok(DbSession::reader(self.get_session_db_path()?)?)
+    }
+
+    fn get_session_db_path(&self) -> Result<std::path::PathBuf, SessionStoreError> {
+        let dir = self.profile.home.path().join(HTTPD_DIR);
+        if !dir.exists() {
+            fs::create_dir_all(&dir)?;
+        }
+        Ok(dir.join(crate::session::store::SESSIONS_DB_FILE))
     }
 
     #[cfg(test)]
-    pub fn sessions(&self) -> &Arc<RwLock<HashMap<SessionId, auth::Session>>> {
-        &self.sessions
+    pub fn profile(&self) -> &Arc<Profile> {
+        &self.profile
     }
 }
 
