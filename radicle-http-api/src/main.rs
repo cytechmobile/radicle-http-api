@@ -4,7 +4,7 @@ use time::Duration;
 
 use radicle::prelude::RepoId;
 use radicle::version::Version;
-use radicle_httpd as httpd;
+use radicle_http_api as httpd;
 
 pub const VERSION: Version = Version {
     name: "radicle-http-api",
