@@ -1,0 +1,188 @@
+
+jobs:
+#- name: tests
+#  plan:
+#    # checkout the code from the repo
+#    - get: runner-image
+#    - get: radicle-http-api
+#      trigger: false
+#
+#    # run cargo build
+#    - task: cargo-test-all
+#      image: runner-image
+#      config:
+#        platform: linux
+#        inputs:
+#          - name: radicle-http-api
+#        outputs:
+#          - name: output.txt
+#        run:
+#          dir: radicle-http-api
+#          path: /bin/bash
+#          args:
+#            - -c
+#            - |
+#              git --version
+#              . "$HOME/.cargo/env"
+#              cargo --version
+#
+#              # run tests
+#              RUST_BACKTRACE=1 cargo test --all | tee output.txt
+
+- name: get-parameters
+  plan:
+    - get: runner-image
+    - get: radicle-http-api
+      trigger: true
+#      passed: [tests]
+
+    - task: env-vars
+      image: runner-image
+      config:
+        platform: linux
+        inputs:
+          - name: radicle-http-api
+        outputs: [ { name: git-facts } ]
+        run:
+          path: /bin/bash
+          dir: radicle-http-api
+          args:
+            - -c
+            - |
+              git --version
+              . "$HOME/.cargo/env"
+
+              git fetch origin 'refs/namespaces/z6MkkfM3tPXNPrPevKr3uSiQtHPuwnNhu2yUVjgd2jXVsVz5/refs/tags/*:refs/tags/*'
+              # for github            
+              # git fetch --all --tags 
+
+              ## rev                        
+              # Set source date. This is honored by `asciidoctor` and other tools.
+              echo "$(git log -1 --pretty=%ct)" | tr -d '\n' > ../git-facts/source_date
+
+              echo "$(git rev-parse --short HEAD)" | tr -d '\n' > ../git-facts/git_head
+
+              version=`./radicle-http-api/build/version`
+
+              echo "$version" | tr -d '\n' > ../git-facts/version
+              
+              cat ../git-facts/version
+              ls -alh ../git-facts/
+              pwd
+
+    - put: git-params
+      params:
+        directory: git-facts
+
+
+
+- name: build-and-push-images
+  plan:
+  - get: runner-image
+    trigger: false
+    passed: [get-parameters]
+  - get: radicle-http-api
+    trigger: false
+    passed: [get-parameters]
+
+  - get: git-data
+    resource: git-params
+    trigger: true
+    passed: [get-parameters]
+
+  - load_var: source_date
+    file: git-data/source_date
+    format: raw
+    reveal: true
+  - load_var: git_head
+    file: git-data/git_head
+    format: raw
+    reveal: true
+  - load_var: version
+    file: git-data/version
+    format: raw
+    reveal: true
+
+  - task: build-http-server-binaries-image
+    privileged: true
+    output_mapping:
+      image: http-server-binaries-image
+    config:
+
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: concourse/oci-build-task
+      inputs:
+      - name: radicle-http-api
+      outputs:
+      - name: image
+      params:
+        CONTEXT: radicle-http-api/radicle-http-api/
+        DOCKERFILE: radicle-http-api/radicle-http-api/build/Dockerfile
+        BUILD_ARG_LC_ALL: C
+        BUILD_ARG_TZ: UTC0
+        BUILD_ARG_GIT_COMMIT_TIME: ((.:source_date))
+        BUILD_ARG_RADICLE_VERSION: ((.:version))
+      run:
+        path: build
+
+  # push images
+  - in_parallel:
+      steps:
+        - put: http-server-binaries-image
+          params:
+            image: http-server-binaries-image/image.tar
+            version: ((.:version))
+        - put: http-server-binaries-image
+          params:
+            image: http-server-binaries-image/image.tar
+            version: ((.:version))
+
+resource_types:
+  - name: key-value
+    type: registry-image
+    source:
+      repository: gstack/keyval-resource
+  - name: git-resource-pinned
+    type: registry-image
+    source:
+      repository: concourse/git-resource
+      tag: 1.16.0
+
+resources:
+# The repo with our Dockerfile
+- name: radicle-http-api
+  type: git-resource-pinned
+  icon: git
+  source:
+    uri: https://github.com/gsaslis/radicle-http-api.git
+    branch: main
+#    uri: https://seed.radicle.xyz/z4V1sjrXqjvFdnCUbxPFqd5p4DtH5.git
+#    branch: master
+    search_remote_refs: true
+    fetch_tags: true
+#    tag_filter: refs/namespaces/z6MksFqXN3Yhqk8pTJdUGLwATkRfQvwZXPqR2qMEhbS9wzpT/refs/tags/v*
+    git_config:
+    - name: safe.directory
+      value: /tmp/build/get
+
+- name: http-server-binaries-image
+  type: registry-image
+  icon: docker
+  source:
+    repository: quay.io/radicle_in_containers/radicle-http-server-binaries
+    tag: latest
+    username: ((registry-username))
+    password: ((registry-password))
+
+- name: runner-image
+  type: registry-image
+  source:
+    repository: quay.io/gsaslis/rust-git-builder
+    tag: latest
+
+
+- name: git-params
+  type: key-value
