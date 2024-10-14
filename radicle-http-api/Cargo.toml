@@ -1,12 +1,12 @@
 [package]
-name = "radicle-httpd"
-description = "Radicle HTTP daemon"
+name = "radicle-http-api"
+description = "Radicle HTTP API"
 homepage = "https://radicle.xyz"
 license = "MIT OR Apache-2.0"
-version = "0.11.2"
-authors = ["cloudhead <cloudhead@radicle.xyz>"]
+version = "1.0.0"
+authors = ["cloudhead <cloudhead@radicle.xyz>", "jchrist <jchrist@cytech.gr>"]
 edition = "2021"
-default-run = "radicle-httpd"
+default-run = "radicle-http-api"
 build = "build.rs"
 
 [features]
@@ -17,7 +17,7 @@ logfmt = [
 ]
 
 [[bin]]
-name = "radicle-httpd"
+name = "radicle-http-api"
 path = "src/main.rs"
 
 [dependencies]

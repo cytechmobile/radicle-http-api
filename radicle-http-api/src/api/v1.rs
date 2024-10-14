@@ -33,7 +33,7 @@ pub fn router(ctx: Context) -> Router {
 async fn root_handler(State(ctx): State<Context>) -> impl IntoResponse {
     let response = json!({
         "message": "Welcome!",
-        "service": "radicle-httpd",
+        "service": "radicle-http-api",
         "version": format!("{}-{}", RADICLE_VERSION, env!("GIT_HEAD")),
         "apiVersion": API_VERSION,
         "nid": ctx.profile.public_key,

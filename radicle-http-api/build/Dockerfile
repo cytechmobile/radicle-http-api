@@ -50,7 +50,7 @@ RUN cargo zigbuild --locked --release \
     --target=aarch64-apple-darwin \
     --target=aarch64-unknown-linux-musl \
     --target=x86_64-unknown-linux-musl \
-    -p radicle-httpd 
+    -p radicle-http-api
 
 # Now copy the files to a new image without all the intermediary artifacts to
 # save some space.
@@ -60,16 +60,16 @@ ARG RADICLE_VERSION
 ARG SOURCE_DATE_EPOCH
 
 COPY --from=builder \
-    /src/target/x86_64-unknown-linux-musl/release/radicle-httpd \
+    /src/target/x86_64-unknown-linux-musl/release/radicle-http-api \
     /builds/x86_64-unknown-linux-musl/bin/
 COPY --from=builder \
-    /src/target/aarch64-unknown-linux-musl/release/radicle-httpd \
+    /src/target/aarch64-unknown-linux-musl/release/radicle-http-api \
     /builds/aarch64-unknown-linux-musl/bin/
 COPY --from=builder \
-    /src/target/aarch64-apple-darwin/release/radicle-httpd \
+    /src/target/aarch64-apple-darwin/release/radicle-http-api \
     /builds/aarch64-apple-darwin/bin/
 COPY --from=builder \
-    /src/target/x86_64-apple-darwin/release/radicle-httpd \
+    /src/target/x86_64-apple-darwin/release/radicle-http-api \
     /builds/x86_64-apple-darwin/bin/
 COPY --from=builder /src/*.1 /builds/x86_64-unknown-linux-musl/man/man1/
 COPY --from=builder /src/*.1 /builds/aarch64-unknown-linux-musl/man/man1/

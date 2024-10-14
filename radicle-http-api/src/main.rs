@@ -7,7 +7,7 @@ use radicle::version::Version;
 use radicle_httpd as httpd;
 
 pub const VERSION: Version = Version {
-    name: "radicle-httpd",
+    name: "radicle-http-api",
     commit: env!("GIT_HEAD"),
     version: env!("RADICLE_VERSION"),
     timestamp: env!("SOURCE_DATE_EPOCH"),
@@ -16,7 +16,7 @@ pub const VERSION: Version = Version {
 pub const HELP_MSG: &str = r#"
 Usage
 
-   radicle-httpd [<option>...]
+   radicle-http-api [<option>...]
    
 Options
 

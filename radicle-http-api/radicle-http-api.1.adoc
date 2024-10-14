@@ -1,4 +1,4 @@
-= radicle-httpd(1)
+= radicle-http-api(1)
 The Radicle Team <team@radicle.xyz>
 :doctype: manpage
 :revnumber: 1.0.0
@@ -8,11 +8,11 @@ The Radicle Team <team@radicle.xyz>
 
 == Name
 
-radicle-httpd - Radicle HTTP daemon
+radicle-http-api - Radicle HTTP API
 
 == Synopsis
 
-*radicle-httpd* --help
+*radicle-http-api* --help
 
 == Description
 

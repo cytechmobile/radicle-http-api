@@ -35,7 +35,7 @@ use crate::session::store::{DbSession, SessionStoreError};
 use crate::Options;
 
 pub const RADICLE_VERSION: &str = env!("RADICLE_VERSION");
-// This version has to be updated on every breaking change to the radicle-httpd API.
+// This version has to be updated on every breaking change to the radicle-http-api API.
 pub const API_VERSION: &str = "1.0.0";
 
 pub const HTTPD_DIR: &str = "httpd";
