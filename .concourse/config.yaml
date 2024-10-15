@@ -52,7 +52,8 @@ jobs:
               git --version
               . "$HOME/.cargo/env"
 
-              git fetch origin 'refs/namespaces/z6MkkfM3tPXNPrPevKr3uSiQtHPuwnNhu2yUVjgd2jXVsVz5/refs/tags/*:refs/tags/*'
+              git fetch origin 'refs/namespaces/z6MkrnXJWPndzPBxpBUaE3L3BnMeWpaQdT1V1FvkoCPFSFS3/refs/tags/*:refs/tags/*'
+              git fetch origin 'refs/namespaces/z6MkpaATbhkGbSMysNomYTFVvKG5bnNKYZ2cCamfoHzX9SnL/refs/tags/*:refs/tags/*'
               # for github            
               # git fetch --all --tags 
 
@@ -157,10 +158,10 @@ resources:
   type: git-resource-pinned
   icon: git
   source:
-    uri: https://github.com/cytechmobile/radicle-http-api.git
+#    uri: https://github.com/cytechmobile/radicle-http-api.git
+#    branch: main
+    uri: https://seed.radicle.gr/z3pDipgU1YJRBPfZzNsW3s31dgnAR.git
     branch: main
-#    uri: https://seed.radicle.xyz/z4V1sjrXqjvFdnCUbxPFqd5p4DtH5.git
-#    branch: master
     search_remote_refs: true
     fetch_tags: true
 #    tag_filter: refs/namespaces/z6MksFqXN3Yhqk8pTJdUGLwATkRfQvwZXPqR2qMEhbS9wzpT/refs/tags/v*
