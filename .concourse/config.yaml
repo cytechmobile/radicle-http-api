@@ -27,7 +27,13 @@ jobs:
 #              cargo --version
 #
 #              # run tests
-#              RUST_BACKTRACE=1 cargo test --all | tee output.txt
+#  cargo clippy --all --tests
+#  cargo fmt --all --check
+#  cargo doc --all --all-features
+#  cargo build --all-features
+#  cargo test --all-features
+#              RUST_BACKTRACE=1 cargo fmt --all --check | tee output.txt
+#              RUST_BACKTRACE=1 cargo fmt --all --check | tee output.txt
 
 - name: get-parameters
   plan:
