@@ -1,5 +1,6 @@
 mod delegates;
 mod node;
+mod oauth;
 mod profile;
 mod projects;
 mod sessions;
@@ -23,6 +24,7 @@ pub fn router(ctx: Context) -> Router {
         .merge(node::router(ctx.clone()))
         .merge(profile::router(ctx.clone()))
         .merge(sessions::router(ctx.clone()))
+        .merge(oauth::router(ctx.clone()))
         .merge(delegates::router(ctx.clone()))
         .merge(projects::router(ctx.clone()))
         .merge(stats::router(ctx));
