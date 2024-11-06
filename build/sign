@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+
+keypath="/keys/radicle.pub"
+version="$(build/version)"
+outdir=build/artifacts
+mkdir -p $outdir
+
+if [ ! -f "$keypath" ]; then
+  echo "fatal: no key found at $keypath" >&2
+  exit 1
+fi
+
+for target in $(cat build/TARGETS); do
+  echo "Signing artifacts for $target.."
+
+  filename="$version-$target.tar.xz"
+  filepath="$outdir/$filename"
+
+  # Output SHA256 digest of archive.
+  checksum="$(cd $outdir && sha256sum $filename)"
+  echo "Checksum of $filepath is $(echo "$checksum" | cut -d' ' -f1)"
+  echo "$checksum" >$filepath.sha256
+
+  # Sign archive and verify archive.
+  rm -f $filepath.sig # Delete existing signature
+  ssh-keygen -Y sign -n file -f $keypath $filepath
+  ssh-keygen -Y check-novalidate -n file -s $filepath.sig <$filepath
+done
+
+# Show artifact checksums.
+echo
+build/checksums
+echo

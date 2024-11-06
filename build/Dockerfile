@@ -88,3 +88,6 @@ RUN find * -maxdepth 0 -type d -exec mv '{}' "radicle-$RADICLE_VERSION-{}" \; &&
     --create --xz \
     --file="{}.tar.xz" \
     '{}' \;
+
+COPY build/sign build/sign
+RUN chmod +x build/sign && build/sign
