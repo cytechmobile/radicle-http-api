@@ -4,6 +4,7 @@ LABEL maintainer="Radicle Team <team@radicle.xyz>"
 WORKDIR /src
 COPY . .
 
+# These arguments are necessary for the build to be reproducible.
 ARG TZ
 ARG LC_ALL
 ARG SOURCE_DATE_EPOCH
@@ -13,7 +14,7 @@ ARG GIT_HEAD
 # Copy cargo configuration we're going to use to specify compiler options.
 RUN mkdir -p .cargo && cp build/config.toml .cargo/config.toml
 # Install dependencies.
-RUN apk update && apk add --no-cache git musl-dev minisign curl xz asciidoctor
+RUN apk update && apk add --no-cache git musl-dev xz asciidoctor zig
 # Build man pages and strip metadata. Removes all comments, since they include
 # non-reproducible information, such as version numbers.
 RUN asciidoctor --doctype manpage --backend manpage --destination-dir . *.1.adoc && \
@@ -27,15 +28,8 @@ RUN rustup target add \
 
 # Install dependencies for cross-compiling to macOS.
 # We use Zig as the linker to perform the compilation from a Linux host.
-# Zig is not yet available on Debian, so we download the official binary.
 # Compilation is done via `cargo-zigbuild` which is a wrapper around `zig`.
-RUN curl -sSf -o zig.tar.xz         https://ziglang.org/download/0.12.0/zig-linux-x86_64-0.12.0.tar.xz && \
-    curl -sSf -o zig.tar.xz.minisig https://ziglang.org/download/0.12.0/zig-linux-x86_64-0.12.0.tar.xz.minisig && \
-    minisign -Vm zig.tar.xz -P RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U && \
-    xz -d -c zig.tar.xz | tar -x && \
-    mv zig-linux-x86_64-0.12.0/zig /usr/bin/zig && \
-    mv zig-linux-x86_64-0.12.0/lib /usr/lib/zig && \
-    cargo install cargo-zigbuild@0.18.3
+RUN cargo install cargo-zigbuild@0.19.3
 
 
 # Parts of the macOS SDK are required to build Radicle, we make these available
