@@ -84,7 +84,6 @@ RUN find * -maxdepth 0 -type d -exec mv '{}' "radicle-$RADICLE_VERSION-{}" \; &&
     --format=posix \
     --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime \
     --mode='go+u,go-w' \
-    --remove-files \
     --create --xz \
     --file="{}.tar.xz" \
     '{}' \;
