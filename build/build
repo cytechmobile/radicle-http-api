@@ -11,28 +11,15 @@ main() {
   # Define user OS for podman
   export OS=$(uname)
 
-  if ! command -v rad >/dev/null; then
-    echo "fatal: rad is not installed" >&2
-    exit 1
-  fi
-
   if ! command -v podman >/dev/null; then
     echo "fatal: podman is not installed" >&2
-    exit 1
-  fi
-
-  if ! command -v sha256sum >/dev/null; then
-    echo "fatal: sha256sum is not installed" >&2
     exit 1
   fi
 
   rev="$(git rev-parse --short HEAD)"
   tempdir="$(mktemp -d)"
   version="$(build/version)"
-  image=radicle-build-$version
-
-  # Authenticate user for signing
-  rad auth
+  image=radicle-http-api-build-$version
 
   echo "Building Radicle $version.."
 
@@ -46,15 +33,15 @@ main() {
       --build-arg LC_ALL \
       --build-arg RADICLE_VERSION=$version \
       --build-arg GIT_HEAD=$rev \
+      --build-arg RAD_PASSPHRASE=${RAD_PASSPHRASE} \
       --arch aarch64 --tag $image \
       -f ./build/Dockerfile \
       -v $HOME/.rustup:/rustup_home \
       -v $PWD/target:/cargo_home \
-      -v $SSH_AUTH_SOCK:/run/host-services/ssh-auth.sock \
-      -v $HOME/.radicle/keys/radicle.pub:/keys/radicle.pub \
+      -v $HOME/.radicle/keys:/keys \
       --env RUSTUP_HOME=/rustup_home \
       --env CARGO_HOME=/cargo_home \
-      --env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock .
+      .
 
 
 

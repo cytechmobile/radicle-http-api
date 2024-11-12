@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 
 keypath="/keys/radicle.pub"
-version="$(build/version)"
-outdir=build/artifacts
+version="${RADICLE_VERSION}"
+outdir=/builds
 mkdir -p $outdir
 
 if [ ! -f "$keypath" ]; then
@@ -10,10 +10,18 @@ if [ ! -f "$keypath" ]; then
   exit 1
 fi
 
-for target in $(cat build/TARGETS); do
+if ! command -v sha256sum >/dev/null; then
+  echo "fatal: sha256sum is not installed" >&2
+  exit 1
+fi
+eval `ssh-agent -s`
+
+SSH_ASKPASS_REQUIRE=prefer DISPLAY=:0 SSH_ASKPASS=/usr/local/bin/askpass ssh-add /keys/radicle
+
+for target in $(cat /opt/TARGETS); do
   echo "Signing artifacts for $target.."
 
-  filename="$version-$target.tar.xz"
+  filename="radicle-http-api-$version-$target.tar.xz"
   filepath="$outdir/$filename"
 
   # Output SHA256 digest of archive.
@@ -29,5 +37,5 @@ done
 
 # Show artifact checksums.
 echo
-build/checksums
+/usr/local/bin/checksums
 echo

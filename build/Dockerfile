@@ -88,7 +88,15 @@ RUN find * -maxdepth 0 -type d -exec mv '{}' "radicle-http-api-$RADICLE_VERSION-
     --file="{}.tar.xz" \
     '{}' \;
 
-# todo: leave signing for later
-#COPY build/sign build/sign
-#COPY build/version build/version
-RUN #chmod +x build/sign && build/sign
+FROM packager as signer
+
+RUN apk add openssh
+
+ARG RADICLE_VERSION
+ARG RAD_PASSPHRASE
+COPY build/sign build/sign
+COPY build/askpass /askpass
+COPY build/checksums build/checksums
+COPY build/version build/version
+COPY build/TARGETS build/TARGETS
+RUN chmod +x build/sign /askpass build/checksums build/version && build/sign
