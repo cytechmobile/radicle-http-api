@@ -73,7 +73,7 @@ COPY --from=builder /src/*.1 /builds/x86_64-apple-darwin/man/man1/
 # Create and compress reproducible archive.
 WORKDIR /builds
 RUN apk update && apk add --no-cache tar xz
-RUN find * -maxdepth 0 -type d -exec mv '{}' "radicle-http-api-$RADICLE_VERSION-{}" \; && \
+RUN find * -maxdepth 0 -type d -exec mv '{}' "radicle-http-api_$RADICLE_VERSION+{}" \; && \
     find * -maxdepth 0 -type d -exec tar \
     --sort=name \
     --verbose \
