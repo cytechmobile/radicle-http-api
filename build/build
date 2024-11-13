@@ -34,11 +34,11 @@ main() {
       --build-arg RADICLE_VERSION=$version \
       --build-arg GIT_HEAD=$rev \
       --build-arg RAD_PASSPHRASE=${RAD_PASSPHRASE} \
+      --build-arg RAD_PRIVATE_KEY=${RAD_PRIVATE_KEY} \
       --arch aarch64 --tag $image \
       -f ./build/Dockerfile \
       -v $HOME/.rustup:/rustup_home \
       -v $PWD/target:/cargo_home \
-      -v $HOME/.radicle/keys:/keys \
       --env RUSTUP_HOME=/rustup_home \
       --env CARGO_HOME=/cargo_home \
       .

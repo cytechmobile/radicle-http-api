@@ -94,6 +94,7 @@ RUN apk add openssh
 
 ARG RADICLE_VERSION
 ARG RAD_PASSPHRASE
+ARG RAD_PRIVATE_KEY
 COPY build/sign build/sign
 COPY build/askpass /askpass
 COPY build/checksums build/checksums

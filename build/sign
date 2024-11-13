@@ -1,9 +1,12 @@
 #!/usr/bin/env sh
 
-keypath="/keys/radicle.pub"
+keypath="/keys/radicle"
 version="${RADICLE_VERSION}"
 outdir=/builds
-mkdir -p $outdir
+mkdir -p $outdir /keys
+
+echo "${RAD_PRIVATE_KEY}" | base64 -d > $keypath
+chmod 0600 $keypath
 
 if [ ! -f "$keypath" ]; then
   echo "fatal: no key found at $keypath" >&2
@@ -16,12 +19,13 @@ if ! command -v sha256sum >/dev/null; then
 fi
 eval `ssh-agent -s`
 
-SSH_ASKPASS_REQUIRE=prefer DISPLAY=:0 SSH_ASKPASS=/usr/local/bin/askpass ssh-add /keys/radicle
+
+SSH_ASKPASS_REQUIRE=prefer DISPLAY=:0 SSH_ASKPASS=/usr/local/bin/askpass ssh-add $keypath
 
 for target in $(cat /opt/TARGETS); do
   echo "Signing artifacts for $target.."
 
-  filename="radicle-http-api-$version-$target.tar.xz"
+  filename="radicle-http-api_$version+$target.tar.xz"
   filepath="$outdir/$filename"
 
   # Output SHA256 digest of archive.
