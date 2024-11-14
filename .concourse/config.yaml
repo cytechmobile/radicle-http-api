@@ -1,46 +1,112 @@
 
 jobs:
-#- name: tests
-#  plan:
-#    # checkout the code from the repo
-#    - get: runner-image
-#    - get: radicle-http-api
-#      trigger: false
-#
-#    # run cargo build
-#    - task: cargo-test-all
-#      image: runner-image
-#      config:
-#        platform: linux
-#        inputs:
-#          - name: radicle-http-api
-#        outputs:
-#          - name: output.txt
-#        run:
-#          dir: radicle-http-api
-#          path: /bin/bash
-#          args:
-#            - -c
-#            - |
-#              git --version
-#              . "$HOME/.cargo/env"
-#              cargo --version
-#
-#              # run tests
-#  cargo clippy --all --tests
-#  cargo fmt --all --check
-#  cargo doc --all --all-features
-#  cargo build --all-features
-#  cargo test --all-features
-#              RUST_BACKTRACE=1 cargo fmt --all --check | tee output.txt
-#              RUST_BACKTRACE=1 cargo fmt --all --check | tee output.txt
 
-- name: get-parameters
+- name: fetch-lint-build-test-release
   plan:
     - get: runner-image
     - get: radicle-http-api
       trigger: true
-#      passed: [tests]
+
+    - task: fetch-deps
+      image: runner-image
+      config:
+        platform: linux
+        params:
+          CARGO_HOME: /cargo_home
+          RUSTUP_HOME: /rustup_home
+        run:
+          dir: radicle-http-api
+          path: /bin/bash
+          args:
+            - -c
+            - |
+              echo "Home: $HOME"
+              . "$HOME/.cargo/env"
+              mkdir -p ${CARGO_HOME}
+              cargo fetch --locked
+              ls -al ~/.cargo
+              ls -al ${CARGO_HOME}
+        caches:
+          - path: /cargo_home
+          - path: /rustup_home
+        inputs:
+          - name: radicle-http-api
+        outputs:
+          - name: cargo_home
+            path: /cargo_home
+          - name: rustup_home
+            path: /rustup_home
+          - name: cargo_output
+            path: target
+
+
+    - task: lint
+      image: runner-image
+      config:
+        platform: linux
+        caches:
+          - path: /cargo_home
+          - path: /rustup_home
+        inputs:
+          - name: radicle-http-api
+          - name: cargo_home
+            path: /cargo_home
+          - name: rustup_home
+            path: /rustup_home
+          - name: cargo_output
+            path: /cargo_output
+        outputs:
+          - name: cargo_output
+            path: /cargo_output
+        params:
+          CARGO_HOME: /cargo_home
+          RUSTUP_HOME: /rustup_home
+          CARGO_TARGET_DIR: /cargo_output
+        run:
+          dir: radicle-http-api
+          path: /bin/bash
+          args:
+            - -c
+            - |
+              . "$HOME/.cargo/env"
+              cargo clippy --all --tests
+              cargo fmt --all --check
+              cargo doc --all --all-features
+
+    - task: cargo-test-all
+      image: runner-image
+      config:
+        platform: linux
+        caches:
+          - path: /cargo_home
+          - path: /rustup_home
+        inputs:
+          - name: radicle-http-api
+          - name: cargo_home
+            path: /cargo_home
+          - name: rustup_home
+            path: /rustup_home
+          - name: cargo_output
+            path: /cargo_output
+        outputs:
+          - name: cargo_output
+            path: /cargo_output
+        params:
+          CARGO_HOME: /cargo_home
+          RUSTUP_HOME: /rustup_home
+          CARGO_TARGET_DIR: /cargo_output
+        run:
+          dir: radicle-http-api
+          path: /bin/bash
+          args:
+            - -c
+            - |
+              . "$HOME/.cargo/env"
+              git --version
+              cargo --version
+
+              # cargo build --all-features
+              RUST_BACKTRACE=1 cargo test --all-features | tee output.txt
 
     - task: env-vars
       image: runner-image
@@ -58,18 +124,13 @@ jobs:
               git --version
               . "$HOME/.cargo/env"
 
-              git fetch origin 'refs/namespaces/z6MkrnXJWPndzPBxpBUaE3L3BnMeWpaQdT1V1FvkoCPFSFS3/refs/tags/*:refs/tags/*'
-              git fetch origin 'refs/namespaces/z6MkpaATbhkGbSMysNomYTFVvKG5bnNKYZ2cCamfoHzX9SnL/refs/tags/*:refs/tags/*'
-              # for github            
-              # git fetch --all --tags 
-
               ## rev                        
               # Set source date. This is honored by `asciidoctor` and other tools.
               echo "$(git log -1 --pretty=%ct)" | tr -d '\n' > ../git-facts/source_date
 
               echo "$(git rev-parse --short HEAD)" | tr -d '\n' > ../git-facts/git_head
 
-              version=`./radicle-http-api/build/version`
+              version=`./build/version`
 
               echo "$version" | tr -d '\n' > ../git-facts/version
               
@@ -87,15 +148,15 @@ jobs:
   plan:
   - get: runner-image
     trigger: false
-    passed: [get-parameters]
+#    passed: [fetch-lint-build-test-release]
   - get: radicle-http-api
     trigger: false
-    passed: [get-parameters]
+#    passed: [fetch-lint-build-test-release]
 
   - get: git-data
     resource: git-params
     trigger: true
-    passed: [get-parameters]
+    passed: [fetch-lint-build-test-release]
 
   - load_var: source_date
     file: git-data/source_date
@@ -110,12 +171,11 @@ jobs:
     format: raw
     reveal: true
 
-  - task: build-http-server-binaries-image
+  - task: build-http-api-image
     privileged: true
     output_mapping:
-      image: http-server-binaries-image
+      image: http-api-image
     config:
-
       platform: linux
       image_resource:
         type: registry-image
@@ -126,26 +186,77 @@ jobs:
       outputs:
       - name: image
       params:
-        CONTEXT: radicle-http-api/radicle-http-api/
-        DOCKERFILE: radicle-http-api/radicle-http-api/build/Dockerfile
+        CONTEXT: radicle-http-api/
+        DOCKERFILE: radicle-http-api/build/Dockerfile
         BUILD_ARG_LC_ALL: C
         BUILD_ARG_TZ: UTC0
         BUILD_ARG_GIT_COMMIT_TIME: ((.:source_date))
         BUILD_ARG_RADICLE_VERSION: ((.:version))
+        BUILD_ARG_RAD_PASSPHRASE: ((signing_key_passphrase))
+        BUILD_ARG_RAD_PRIVATE_KEY: ((signing_key))
+        UNPACK_ROOTFS: true #allow this image to be reused in later steps, so we can extract the binaries from there
       run:
         path: build
 
-  # push images
+  - task: keep-binaries
+    image: http-api-image
+    config:
+      platform: linux
+      outputs:
+        - name: binaries
+      params:
+        RADICLE_VERSION: ((.:version))
+      run:
+        path: /bin/sh
+        args:
+          - -c
+          - |
+            ls -al /builds
+            ls -al /builds/aarch64-apple-darwin/bin/
+            for arch in x86_64-apple-darwin x86_64-unknown-linux-musl aarch64-apple-darwin aarch64-unknown-linux-musl; do
+                cp /builds/radicle-http-api_${RADICLE_VERSION}+${arch}.tar.xz binaries/
+                cp /builds/radicle-http-api_${RADICLE_VERSION}+${arch}.tar.xz binaries/radicle-http-api_latest+${arch}.tar.xz
+            done
+
+    # push images
   - in_parallel:
       steps:
-        - put: http-server-binaries-image
+        - put: http-api-image
           params:
-            image: http-server-binaries-image/image.tar
+            image: http-api-image/image.tar
             version: ((.:version))
-        - put: http-server-binaries-image
+        - put: bucket
           params:
-            image: http-server-binaries-image/image.tar
-            version: ((.:version))
+           file: binaries/radicle-http-api_((.:version))+aarch64-apple-darwin.tar.xz
+           acl: public-read
+        - put: bucket
+          params:
+           file: binaries/radicle-http-api_latest+aarch64-apple-darwin.tar.xz
+           acl: public-read
+        - put: bucket
+          params:
+           file: binaries/radicle-http-api_((.:version))+aarch64-unknown-linux-musl.tar.xz
+           acl: public-read
+        - put: bucket
+          params:
+           file: binaries/radicle-http-api_latest+aarch64-unknown-linux-musl.tar.xz
+           acl: public-read
+        - put: bucket
+          params:
+           file: binaries/radicle-http-api_((.:version))+x86_64-apple-darwin.tar.xz
+           acl: public-read
+        - put: bucket
+          params:
+           file: binaries/radicle-http-api_latest+x86_64-apple-darwin.tar.xz
+           acl: public-read
+        - put: bucket
+          params:
+           file: binaries/radicle-http-api_((.:version))+x86_64-unknown-linux-musl.tar.xz
+           acl: public-read
+        - put: bucket
+          params:
+           file: binaries/radicle-http-api_latest+x86_64-unknown-linux-musl.tar.xz
+           acl: public-read
 
 resource_types:
   - name: key-value
@@ -166,8 +277,6 @@ resources:
   source:
 #    uri: https://github.com/cytechmobile/radicle-http-api.git
 #    branch: main
-    uri: https://seed.radicle.gr/z3pDipgU1YJRBPfZzNsW3s31dgnAR.git
-    branch: main
     search_remote_refs: true
     fetch_tags: true
 #    tag_filter: refs/namespaces/z6MksFqXN3Yhqk8pTJdUGLwATkRfQvwZXPqR2qMEhbS9wzpT/refs/tags/v*
@@ -175,11 +284,11 @@ resources:
     - name: safe.directory
       value: /tmp/build/get
 
-- name: http-server-binaries-image
+- name: http-api-image
   type: registry-image
   icon: docker
   source:
-    repository: quay.io/radicle_in_containers/radicle-http-server-binaries
+    repository: quay.io/radicle_in_containers/radicle-http-api
     tag: latest
     username: ((registry-username))
     password: ((registry-password))
@@ -193,3 +302,12 @@ resources:
 
 - name: git-params
   type: key-value
+
+- name: bucket
+  type: s3
+  source:
+    bucket: radicle-releases
+    regexp: radicle-http-api/(.*)
+    access_key_id: ((access_key_id))
+    secret_access_key: ((secret_access_key))
+    endpoint: minio-api.radicle.gr
