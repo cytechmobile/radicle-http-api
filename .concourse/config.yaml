@@ -276,7 +276,9 @@ resources:
   icon: git
   source:
 #    uri: https://github.com/cytechmobile/radicle-http-api.git
-#    branch: main
+#    branch: feat/better_build
+    uri: https://seed.radicle.gr/z3pDipgU1YJRBPfZzNsW3s31dgnAR.git
+    branch: main
     search_remote_refs: true
     fetch_tags: true
 #    tag_filter: refs/namespaces/z6MksFqXN3Yhqk8pTJdUGLwATkRfQvwZXPqR2qMEhbS9wzpT/refs/tags/v*
