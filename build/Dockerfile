@@ -95,12 +95,11 @@ RUN apk add openssh
 ARG RADICLE_VERSION
 ARG RAD_PASSPHRASE
 ARG RAD_PRIVATE_KEY
-COPY build/sign build/sign
-COPY build/askpass /askpass
-COPY build/checksums build/checksums
-COPY build/version build/version
-COPY build/TARGETS build/TARGETS
-RUN chmod +x build/sign /askpass build/checksums build/version && build/sign
+
+COPY --chmod=775 build/askpass build/sign build/askpass build/checksums build/version /usr/local/bin/
+COPY build/TARGETS /opt/TARGETS
+
+RUN /usr/local/bin/sign
 
 FROM alpine:3.20
 RUN apk add git git-daemon
