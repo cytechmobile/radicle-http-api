@@ -101,3 +101,32 @@ COPY build/checksums build/checksums
 COPY build/version build/version
 COPY build/TARGETS build/TARGETS
 RUN chmod +x build/sign /askpass build/checksums build/version && build/sign
+
+FROM alpine:3.20
+RUN apk add git git-daemon
+
+ARG RADICLE_VERSION
+ENV PLATFORM=x86_64-unknown-linux-musl
+ENV RADICLE_USER_ID=11011 RADICLE_GROUP_ID=11011
+ENV BINARY_NAME="radicle-http-api_${RADICLE_VERSION}+${PLATFORM}"
+# Copy over binaries from heartwood image
+COPY --from=packager "/builds/$BINARY_NAME.tar.xz" .
+RUN tar xf $BINARY_NAME
+
+RUN mv $BINARY_NAME/bin/radicle-http-api /usr/local/bin/
+
+RUN rm -rf $BINARY_NAME/
+
+# Create a non-root user
+RUN addgroup -S radicle -g $RADICLE_GROUP_ID  && adduser -S radicle -G radicle -u $RADICLE_USER_ID
+
+# Change ownership of necessary directories/files
+RUN chown -R radicle:radicle /home/radicle /usr/local/bin/radicle-http-api
+
+USER radicle
+
+WORKDIR /home/radicle
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/radicle-http-api"]
