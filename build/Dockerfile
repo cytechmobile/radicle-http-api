@@ -48,7 +48,7 @@ RUN cargo zigbuild --locked --release \
 
 # Now copy the files to a new image without all the intermediary artifacts to
 # save some space.
-FROM alpine:3.19 as packager
+FROM alpine:3.20 as packager
 
 ARG RADICLE_VERSION
 ARG SOURCE_DATE_EPOCH
@@ -110,7 +110,8 @@ ENV PLATFORM=x86_64-unknown-linux-musl
 ENV RADICLE_USER_ID=11011 RADICLE_GROUP_ID=11011
 ENV BINARY_NAME="radicle-http-api_${RADICLE_VERSION}+${PLATFORM}"
 # Copy over binaries from heartwood image
-COPY --from=packager "/builds/$BINARY_NAME.tar.xz" .
+COPY --from=packager /builds /builds
+WORKDIR /builds
 RUN tar xf $BINARY_NAME.tar.xz
 
 RUN mv $BINARY_NAME/bin/radicle-http-api /usr/local/bin/
