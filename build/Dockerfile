@@ -111,7 +111,7 @@ ENV RADICLE_USER_ID=11011 RADICLE_GROUP_ID=11011
 ENV BINARY_NAME="radicle-http-api_${RADICLE_VERSION}+${PLATFORM}"
 # Copy over binaries from heartwood image
 COPY --from=packager "/builds/$BINARY_NAME.tar.xz" .
-RUN tar xf $BINARY_NAME
+RUN tar xf $BINARY_NAME.tar.xz
 
 RUN mv $BINARY_NAME/bin/radicle-http-api /usr/local/bin/
 
