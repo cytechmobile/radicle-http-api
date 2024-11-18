@@ -212,7 +212,6 @@ jobs:
           - -c
           - |
             ls -al /builds
-            ls -al /builds/aarch64-apple-darwin/bin/
             for arch in x86_64-apple-darwin x86_64-unknown-linux-musl aarch64-apple-darwin aarch64-unknown-linux-musl; do
                 cp /builds/radicle-http-api_${RADICLE_VERSION}+${arch}.tar.xz binaries/
                 cp /builds/radicle-http-api_${RADICLE_VERSION}+${arch}.tar.xz binaries/radicle-http-api_latest+${arch}.tar.xz
