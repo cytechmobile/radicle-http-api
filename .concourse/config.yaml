@@ -204,6 +204,7 @@ jobs:
       platform: linux
       outputs:
         - name: binaries
+          path: /binaries
       params:
         RADICLE_VERSION: ((.:version))
       run:
@@ -213,8 +214,8 @@ jobs:
           - |
             ls -al /builds
             for arch in x86_64-apple-darwin x86_64-unknown-linux-musl aarch64-apple-darwin aarch64-unknown-linux-musl; do
-                cp /builds/radicle-http-api_${RADICLE_VERSION}+${arch}.tar.xz binaries/
-                cp /builds/radicle-http-api_${RADICLE_VERSION}+${arch}.tar.xz binaries/radicle-http-api_latest+${arch}.tar.xz
+                cp /builds/radicle-http-api_${RADICLE_VERSION}+${arch}.tar.xz /binaries/
+                cp /builds/radicle-http-api_${RADICLE_VERSION}+${arch}.tar.xz /binaries/radicle-http-api_latest+${arch}.tar.xz
             done
 
     # push images
