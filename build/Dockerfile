@@ -108,7 +108,8 @@ ARG RADICLE_VERSION
 ENV PLATFORM=x86_64-unknown-linux-musl
 ENV RADICLE_USER_ID=11011 RADICLE_GROUP_ID=11011
 ENV BINARY_NAME="radicle-http-api_${RADICLE_VERSION}+${PLATFORM}"
-# Copy over binaries from heartwood image
+
+# Copy over binaries
 COPY --from=packager /builds /builds
 WORKDIR /builds
 RUN tar xf $BINARY_NAME.tar.xz

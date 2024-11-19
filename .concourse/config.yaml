@@ -208,6 +208,7 @@ jobs:
       params:
         RADICLE_VERSION: ((.:version))
       run:
+        user: root
         path: /bin/sh
         args:
           - -c
