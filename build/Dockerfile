@@ -1,6 +1,5 @@
 # Builds release binaries for Radicle.
 FROM rust:1.81-alpine3.20 as builder
-LABEL maintainer="Radicle Team <team@radicle.xyz>"
 WORKDIR /src
 COPY . .
 
@@ -102,6 +101,8 @@ COPY build/TARGETS /opt/TARGETS
 RUN /usr/local/bin/sign
 
 FROM alpine:3.20
+LABEL maintainer="Yorgos Saslis <yorgos.work@proton.me>"
+
 RUN apk add git git-daemon
 
 ARG RADICLE_VERSION
