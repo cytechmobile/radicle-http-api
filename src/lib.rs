@@ -3,7 +3,7 @@
 #![recursion_limit = "256"]
 pub mod api;
 pub mod error;
-pub mod session;
+pub mod store;
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
