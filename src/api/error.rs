@@ -100,7 +100,7 @@ pub enum Error {
 
     /// Session store error.
     #[error(transparent)]
-    SessionStore(#[from] crate::session::store::SessionStoreError),
+    SessionStore(#[from] crate::store::DbStoreError),
 
     /// Session expiration time error
     #[error(transparent)]

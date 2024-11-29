@@ -10,7 +10,7 @@ use radicle::node::Alias;
 
 use crate::api::error::Error;
 use crate::api::Context;
-use crate::session::store::SessionStoreError;
+use crate::store::DbStoreError;
 
 pub const UNAUTHORIZED_SESSIONS_EXPIRATION: Duration = Duration::seconds(60);
 pub const DEFAULT_AUTHORIZED_SESSIONS_EXPIRATION: Duration = Duration::weeks(1);
@@ -82,14 +82,14 @@ impl Session {
         &mut self,
         expiry: Duration,
         current_time: OffsetDateTime,
-    ) -> Result<(), SessionStoreError> {
+    ) -> Result<(), DbStoreError> {
         // zero or negative expiration duration means that the session does not expire
         self.expires_at = if expiry.is_zero() || expiry.is_negative() {
-            OffsetDateTime::from_unix_timestamp(0).map_err(SessionStoreError::InvalidTimestamp)?
+            OffsetDateTime::from_unix_timestamp(0).map_err(DbStoreError::InvalidTimestamp)?
         } else {
             current_time
                 .checked_add(expiry)
-                .ok_or(SessionStoreError::InvalidTimestampOperation)?
+                .ok_or(DbStoreError::InvalidTimestampOperation)?
         };
 
         Ok(())

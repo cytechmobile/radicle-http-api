@@ -172,7 +172,7 @@ async fn session_delete_handler(
 }
 
 #[cfg(test)]
-mod sessions {
+mod sessions_tests {
     use crate::api::auth;
     use axum::body::Body;
     use axum::http::StatusCode;

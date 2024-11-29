@@ -352,9 +352,13 @@ pub async fn create_session(ctx: Context) {
 }
 
 pub async fn get(app: &Router, path: impl ToString) -> Response {
+    get_auth(app, path, None).await
+}
+
+pub async fn get_auth(app: &Router, path: impl ToString, auth: Option<String>) -> Response {
     Response(
         app.clone()
-            .oneshot(request(path, Method::GET, None, None))
+            .oneshot(request(path, Method::GET, None, auth))
             .await
             .unwrap(),
     )
@@ -397,6 +401,20 @@ pub async fn put(
     Response(
         app.clone()
             .oneshot(request(path, Method::PUT, body, auth))
+            .await
+            .unwrap(),
+    )
+}
+
+pub async fn delete(
+    app: &Router,
+    path: impl ToString,
+    body: Option<Body>,
+    auth: Option<String>,
+) -> Response {
+    Response(
+        app.clone()
+            .oneshot(request(path, Method::DELETE, body, auth))
             .await
             .unwrap(),
     )

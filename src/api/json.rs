@@ -152,7 +152,7 @@ pub(crate) fn patch(
                     patch_comment(id, c, aliases)
                 }).collect::<Vec<_>>(),
                 "timestamp": rev.timestamp().as_secs(),
-                "reviews": rev.reviews().into_iter().map(move |(_, r)| {
+                "reviews": rev.reviews().map(move |(_, r)| {
                     review(r, aliases)
                 }).collect::<Vec<_>>(),
             })

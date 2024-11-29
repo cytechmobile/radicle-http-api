@@ -1217,7 +1217,7 @@ mod routes {
     async fn test_search_projects() {
         let tmp = tempfile::tempdir().unwrap();
         let app = super::router(seed(tmp.path()));
-        let response = get(&app, format!("/projects/search?q=hello")).await;
+        let response = get(&app, "/projects/search?q=hello".to_string()).await;
 
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(
@@ -1257,7 +1257,7 @@ mod routes {
     async fn test_search_projects_pagination() {
         let tmp = tempfile::tempdir().unwrap();
         let app = super::router(seed(tmp.path()));
-        let response = get(&app, format!("/projects/search?q=hello&perPage=1")).await;
+        let response = get(&app, "/projects/search?q=hello&perPage=1".to_string()).await;
 
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(

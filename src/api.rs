@@ -31,7 +31,7 @@ mod v1;
 
 use crate::api::error::Error;
 use crate::cache::Cache;
-use crate::session::store::{DbSession, SessionStoreError};
+use crate::store::{DbStore, DbStoreError, DbStoreTrait, WebhookDb};
 use crate::Options;
 
 pub const RADICLE_VERSION: &str = env!("RADICLE_VERSION");
@@ -91,7 +91,7 @@ impl Context {
     }
 
     /// Get a repository by RID, checking to make sure we're allowed to view it.
-    pub fn repo(&self, rid: RepoId) -> Result<(Repository, DocAt), error::Error> {
+    pub fn repo(&self, rid: RepoId) -> Result<(Repository, DocAt), Error> {
         let repo = self.profile.storage.repository(rid)?;
         let doc = repo.identity_doc()?;
         // Don't allow accessing private repos.
@@ -101,20 +101,32 @@ impl Context {
         Ok((repo, doc))
     }
 
-    pub fn open_session_db(&self) -> Result<DbSession, error::Error> {
-        Ok(DbSession::open(self.get_session_db_path()?)?)
+    pub fn open_session_db(&self) -> Result<DbStore, Error> {
+        Ok(DbStore::open(self.get_session_db_path()?)?)
     }
 
-    pub fn read_session_db(&self) -> Result<DbSession, error::Error> {
-        Ok(DbSession::reader(self.get_session_db_path()?)?)
+    pub fn read_session_db(&self) -> Result<DbStore, Error> {
+        Ok(DbStore::reader(self.get_session_db_path()?)?)
     }
 
-    fn get_session_db_path(&self) -> Result<std::path::PathBuf, SessionStoreError> {
+    fn get_session_db_path(&self) -> Result<std::path::PathBuf, DbStoreError> {
         let dir = self.profile.home.path().join(HTTPD_DIR);
         if !dir.exists() {
             fs::create_dir_all(&dir)?;
         }
-        Ok(dir.join(crate::session::store::SESSIONS_DB_FILE))
+        Ok(dir.join(crate::store::SESSIONS_DB_FILE))
+    }
+
+    pub fn open_webhooks_db(&self) -> Result<WebhookDb, Error> {
+        Ok(WebhookDb::open(self.get_webhook_db_path()?)?)
+    }
+
+    fn get_webhook_db_path(&self) -> Result<std::path::PathBuf, DbStoreError> {
+        let dir = self.profile.home.path().join(HTTPD_DIR);
+        if !dir.exists() {
+            fs::create_dir_all(&dir)?;
+        }
+        Ok(dir.join(crate::store::WEBHOOKS_DB_FILE))
     }
 
     #[cfg(test)]

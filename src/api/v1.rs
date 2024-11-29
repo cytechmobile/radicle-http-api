@@ -5,6 +5,7 @@ mod profile;
 mod projects;
 mod sessions;
 mod stats;
+mod webhooks;
 
 use axum::extract::State;
 use axum::response::{IntoResponse, Json};
@@ -27,7 +28,8 @@ pub fn router(ctx: Context) -> Router {
         .merge(oauth::router(ctx.clone()))
         .merge(delegates::router(ctx.clone()))
         .merge(projects::router(ctx.clone()))
-        .merge(stats::router(ctx));
+        .merge(stats::router(ctx.clone()))
+        .merge(webhooks::router(ctx));
 
     Router::new().nest("/v1", routes)
 }
