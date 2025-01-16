@@ -1,13 +1,13 @@
-use anyhow::Error;
-use std::iter::repeat_with;
 use std::num::NonZeroUsize;
-use std::sync::Arc;
 use std::{collections::HashMap, process};
+use std::iter::repeat_with;
+use std::sync::Arc;
+use anyhow::Error;
 use time::{Duration, OffsetDateTime};
 
 use radicle::prelude::RepoId;
-use radicle::version::Version;
 use radicle::Profile;
+use radicle::version::Version;
 use radicle_http_api as httpd;
 use radicle_http_api::api;
 use radicle_http_api::api::auth::{AuthState, Session};
@@ -23,7 +23,7 @@ pub const HELP_MSG: &str = r#"
 Usage
 
    radicle-http-api [<option>...]
-
+   
 Options
 
     --listen       <address>         Address to listen on (default: 0.0.0.0:8080)
@@ -126,7 +126,9 @@ fn parse_options() -> Result<httpd::Options, Error> {
                 .checked_add(options.session_expiry)
                 .unwrap(),
         };
-        let encrypted_session_id = signer.try_sign(session_id.as_bytes())?.to_string();
+        let encrypted_session_id = signer
+            .try_sign(session_id.as_bytes())?
+            .to_string();
         let mut sessions = ctx.open_session_db()?;
         let ok = sessions
             .insert(&encrypted_session_id, &session)
