@@ -117,15 +117,14 @@ fn parse_options() -> Result<httpd::Options, Error> {
             .take(api::auth::DEFAULT_SESSION_ID_CUSTOM_EXPIRATION_LENGTH)
             .collect::<String>();
         let signer = profile.signer().map_err(Error::from)?;
-        let session = Session {
+        let mut session = Session {
             status: AuthState::Authorized,
             public_key: *signer.public_key(),
             alias: profile.config.node.alias.clone(),
             issued_at: OffsetDateTime::now_utc(),
-            expires_at: OffsetDateTime::now_utc()
-                .checked_add(options.session_expiry)
-                .unwrap(),
+            expires_at: OffsetDateTime::now_utc(),
         };
+        session.set_expiration(options.session_expiry, OffsetDateTime::now_utc())?;
         let encrypted_session_id = signer.try_sign(session_id.as_bytes())?.to_string();
         let mut sessions = ctx.open_session_db()?;
         let ok = sessions
