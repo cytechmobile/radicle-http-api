@@ -133,7 +133,7 @@ fn oauth_auto_submit_form(cb: String, session_id: String) -> String {
 
 #[cfg(test)]
 mod oauth_tests {
-    use crate::test::{self, get};
+    use crate::test::{self, create_session, get, SESSION_ID};
     use axum::http::{Request, StatusCode};
     use hyper::Method;
     use tower::ServiceExt;
@@ -179,9 +179,12 @@ mod oauth_tests {
         let tmp = tempfile::tempdir().unwrap();
         let ctx = test::seed(tmp.path());
         let app = super::router(ctx.to_owned());
+        
+        // create a session to use
+        create_session(ctx).await;
 
         // Request to get the html page
-        let form_body = "session_id=testSessionId&callback_url=https://radicle.xyz".to_string();
+        let form_body = format!("session_id={SESSION_ID}&callback_url=https://radicle.xyz");
         let req = Request::builder()
             .method(Method::POST)
             .uri("/oauth")
@@ -189,12 +192,14 @@ mod oauth_tests {
             .body(form_body)
             .unwrap();
         let response = app.oneshot(req).await.unwrap();
-        //let response = post(&app, , Some(Body::from(form_body)), None).await;
         let status = response.status();
-        let redir_url = response.headers()["Location"].to_str().unwrap();
-        //let html: String = String::from_utf8(html_bytes.to_vec()).unwrap();
-
-        assert_eq!(status, StatusCode::TEMPORARY_REDIRECT);
-        assert_eq!(redir_url, "https://radicle.xyz?session_id=testSessionId");
+        assert_eq!(status, StatusCode::OK);
+        let html_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let html: String = String::from_utf8(html_bytes.to_vec()).unwrap();
+        println!("{}", html);
+        assert!(html.contains(r#"<body onload="document.frm.submit()">"#));
+        assert!(html.contains(r#"<form name="frm" action="https://radicle.xyz" method="POST" style="display:none;">"#));
     }
 }
